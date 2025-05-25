@@ -3,6 +3,7 @@ import MyFolderItem from "./MyfolderItem";
 
 const items = [
   {
+    imageSrc: "/assets/item1.png",
     platform: "지그재그",
     brandName: "대충브랜드이름",
     productTitle: "봄신상새내기개강룩어쩌고저쩌고대충가디건",
@@ -19,6 +20,7 @@ const items = [
     hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
   },
   {
+    imageSrc: "/assets/item2.png",
     platform: "무신사",
     brandName: "다른브랜드이름",
     productTitle: "세미 오버핏 가디건 - 3color",
@@ -38,7 +40,7 @@ const items = [
 
 const MyFolder = () => {
   return (
-    <div>
+    <div className="p-5">
       {items.map((item, idx) => (
         <MyFolderItem key={idx} itemInfo={item} />
       ))}
