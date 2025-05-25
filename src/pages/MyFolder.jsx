@@ -3,7 +3,7 @@ import MyFolderItem from "./MyfolderItem";
 
 const items = [
   {
-    platform: "zigzag",
+    platform: "지그재그",
     brandName: "대충브랜드이름",
     productTitle: "봄신상새내기개강룩어쩌고저쩌고대충가디건",
     discount: {
@@ -19,20 +19,20 @@ const items = [
     hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
   },
   {
-    platform: "zigzag",
+    platform: "무신사",
     brandName: "다른브랜드이름",
-    productTitle: "여름신상루즈핏셔츠멋있어보이는코디용셔츠",
+    productTitle: "세미 오버핏 가디건 - 3color",
     discount: {
-      rate: 30,
-      label: "30%",
+      rate: 90,
+      label: "90%",
     },
     price: {
-      amount: 25900,
+      amount: 2345,
       currency: "KRW",
       formatted: "25,900원",
     },
     breadcrumbs: ["카테고리", "상의", "셔츠"],
-    hashtags: ["셔츠", "여름신상", "루즈핏", "코디"],
+    hashtags: ["상의", "봄신상", "가디건"],
   },
 ];
 
