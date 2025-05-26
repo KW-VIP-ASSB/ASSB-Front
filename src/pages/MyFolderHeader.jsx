@@ -1,7 +1,7 @@
 // 장바구니 이름과 장바구니 설정 버튼
 const MyFolderHeader = ({ folderName }) => {
   return (
-    <div className="flex justify-between w-full mb-5">
+    <div className="flex justify-between w-full pb-5 border-b border-gray-200">
       <h1 className="text-2xl">{folderName}</h1>
       <div className="flex gap-5">
         <button className="px-3 py-1 border border-black text-sm">

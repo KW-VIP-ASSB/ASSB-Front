@@ -19,6 +19,8 @@ const items = [
     },
     breadcrumbs: ["카테고리", "상의", "아우터", "가디건"],
     hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
+    review: "이곳에서 review summary를 확인합니다.",
+    fit: "",
   },
   {
     imageSrc: "/assets/item2.png",
@@ -36,6 +38,8 @@ const items = [
     },
     breadcrumbs: ["카테고리", "상의", "셔츠"],
     hashtags: ["상의", "봄신상", "가디건"],
+    review: "",
+    fit: "",
   },
 ];
 
