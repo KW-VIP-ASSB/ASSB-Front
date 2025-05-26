@@ -39,7 +39,7 @@ const items = [
     breadcrumbs: ["카테고리", "상의", "셔츠"],
     hashtags: ["상의", "봄신상", "가디건"],
     review: "",
-    fit: "",
+    fit: "이곳에서 핏을 확인합니다",
   },
 ];
 
