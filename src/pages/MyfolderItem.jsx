@@ -12,11 +12,11 @@ const MyFolderItem = ({ itemInfo }) => {
   } = itemInfo;
 
   return (
-    <div className="flex w-full">
+    <div className="flex w-full border-b border-gray-200">
       <div className="flex items-center">
-        <img src={imageSrc} className="w-30 h-auto"></img>
+        <img src={imageSrc} className="w-40 h-auto"></img>
       </div>
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4">
         <div className="text-xs text-gray-500">{platform}</div>
         <div className="mt-1 text-sm">{brandName}</div>
         <div className="mt-2 text-xl font-medium leading-snug">
@@ -43,13 +43,13 @@ const MyFolderItem = ({ itemInfo }) => {
         </div>
 
         <div className="flex gap-2">
-          <button className="px-3 py-1 border border-black text-sm">
+          <button className="px-3 py-1 border border-black text-sm cursor-pointer duration-150 hover:bg-black hover:text-white">
             리뷰 요약
           </button>
-          <button className="px-3 py-1 bg-black text-white text-sm">
+          <button className="px-3 py-1 border border-black bg-black text-white text-sm cursor-pointer duration-150 hover:bg-white hover:text-black">
             핏 확인하기
           </button>
-          <button className="px-3 py-1 border border-black text-sm">
+          <button className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white">
             삭제
           </button>
         </div>
