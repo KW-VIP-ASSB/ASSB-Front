@@ -1,6 +1,7 @@
-import React from "react";
-import MyFolderItem from "./MyfolderItem";
+import MyFolderHeader from "./MyFolderHeader";
+import MyFolderItem from "./MyFolderItem";
 
+const folderName = "새 장바구니1";
 const items = [
   {
     imageSrc: "/assets/item1.png",
@@ -41,6 +42,8 @@ const items = [
 const MyFolder = () => {
   return (
     <div className="p-5">
+      <MyFolderHeader folderName={folderName} />
+
       {items.map((item, idx) => (
         <MyFolderItem key={idx} itemInfo={item} />
       ))}

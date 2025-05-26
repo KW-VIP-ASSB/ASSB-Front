@@ -12,7 +12,7 @@ const MyFolderItem = ({ itemInfo }) => {
   } = itemInfo;
 
   return (
-    <div className="flex w-full border-b border-gray-200">
+    <div className="flex w-full border-t border-gray-200">
       <div className="flex items-center">
         <img src={imageSrc} className="w-40 h-auto"></img>
       </div>
