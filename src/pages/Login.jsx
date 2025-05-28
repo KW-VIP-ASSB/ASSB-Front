@@ -1,18 +1,105 @@
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../components/ui/input";
 
-const Login = () => {
-  const navigate = useNavigate();
-  return (
-    <div>
-      <h2>Login</h2>
-      <button
-        onClick={() => {
-          navigate("/folder");
-        }}
-      >
-        move to folder
-      </button>
-    </div>
-  );
+const handleSubmit = async (e) => {
+    e.preventDefault(); // 기본 제출 막기
+
+    try {
+        const response = await fetch("/api/users/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+            alert("로그인 실패");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data?.token) {
+            localStorage.setItem("token", data.data.token);
+            console.log("로그인 성공, 토큰 저장됨:", data.data.token);
+            navigate("/folder");
+        } else {
+            alert("로그인 실패: " + (data.message || "Unknown error"));
+        }
+    } catch (error) {
+        console.error("로그인 에러:", error);
+        alert("서버 오류");
+    }
 };
-export default Login;
+export default function Login() {
+    const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    return (
+        <div className="flex items-center justify-center h-screen px-4 bg-white">
+            <Card className="w-full max-w-sm">
+                <CardContent className="flex flex-col items-center gap-6 py-16 w-full">
+                    {/* Title */}
+                    <h1 className="text-[32px] font-normal text-black">
+                        Super Fitting
+                    </h1>
+                    <p className="text-base text-black/50 font-normal">
+                        가장 똑똑한 방법으로 옷을 골라보세요
+                    </p>
+
+                    {/* Form */}
+                    <form className="w-full space-y-4" onSubmit={handleSubmit}>
+                        {/* 이메일 */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-black">이메일</label>
+                            <Input
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                type="email"
+                                placeholder="Email"
+                                className="px-4 py-2 h-auto rounded border border-black/40 text-xs"
+                            />
+                        </div>
+
+                        {/* 비밀번호 */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xs text-black">
+                                비밀번호
+                            </label>
+                            <Input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                                className="px-4 py-2 h-auto rounded border border-black/40 text-xs"
+                            />
+                        </div>
+
+                        {/* 로그인 버튼 */}
+                        <Button
+                            type="submit"
+                            className="w-full bg-black text-white text-xs py-2 rounded"
+                        >
+                            Login
+                        </Button>
+                    </form>
+
+                    {/* 회원가입 링크 */}
+                    <p className="text-xs text-black/60">
+                        계정이 아직 없으신가요?{" "}
+                        <span
+                            onClick={() => navigate("/signup")}
+                            className="text-black underline cursor-pointer"
+                        >
+                            회원가입
+                        </span>
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

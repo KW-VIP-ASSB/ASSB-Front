@@ -48,20 +48,35 @@ export default function Signup() {
     };
 
     const handleSubmit = async (e) => {
-        console.log("Form submitted:", { ...formData, styles: selectedStyles });
-        alert("회원가입이 완료되었습니다!");
-        const res = await fetch("/api/signup", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-        });
+        e.preventDefault();
 
-        if (res.ok) {
-            alert("회원가입 성공");
-        } else {
-            alert("회원가입 실패");
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("로그인 정보가 없습니다.");
+            return;
+        }
+        try {
+            const response = await fetch(`/api/users/${token}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    ...formData,
+                    styles: selectedStyles,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert("회원정보 업데이트 완료");
+            } else {
+                alert("업데이트 실패: " + (result.message || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("에러:", error);
+            alert("서버 오류");
         }
     };
 
@@ -69,7 +84,7 @@ export default function Signup() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="bg-white border border-black rounded-lg p-8 w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-normal mb-2">회원가입</h1>
+                    <h1 className="text-3xl font-normal mb-2">내 정보 변경</h1>
                     <p className="text-gray-500 text-base">
                         가장 똑똑한 방법으로 옷을 골라보세요
                     </p>
@@ -399,23 +414,12 @@ export default function Signup() {
                         </div>
                     </div>
 
-                    {/* Sign Up Button */}
                     <button
                         onClick={handleSubmit}
                         className="w-full h-12 bg-black text-white font-bold text-xs mt-6 rounded transition-colors hover:bg-gray-800"
                     >
-                        Sign Up
+                        정보 변경 완료
                     </button>
-
-                    {/* Login Link */}
-                    <div className="text-center text-xs mt-4">
-                        <span className="text-gray-500">
-                            기존 계정이 있으신가요?{" "}
-                        </span>
-                        <a href="#" className="text-black underline">
-                            로그인
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
