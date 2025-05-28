@@ -1,12 +1,44 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 
+const handleSubmit = async (e) => {
+    e.preventDefault(); // 기본 제출 막기
+
+    try {
+        const response = await fetch("/api/users/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+            alert("로그인 실패");
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data?.token) {
+            localStorage.setItem("token", data.data.token);
+            console.log("로그인 성공, 토큰 저장됨:", data.data.token);
+            navigate("/folder");
+        } else {
+            alert("로그인 실패: " + (data.message || "Unknown error"));
+        }
+    } catch (error) {
+        console.error("로그인 에러:", error);
+        alert("서버 오류");
+    }
+};
 export default function Login() {
     const navigate = useNavigate();
-
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     return (
         <div className="flex items-center justify-center h-screen px-4 bg-white">
             <Card className="w-full max-w-sm">
@@ -20,11 +52,13 @@ export default function Login() {
                     </p>
 
                     {/* Form */}
-                    <form className="w-full space-y-4">
+                    <form className="w-full space-y-4" onSubmit={handleSubmit}>
                         {/* 이메일 */}
                         <div className="flex flex-col gap-1">
                             <label className="text-xs text-black">이메일</label>
                             <Input
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 type="email"
                                 placeholder="Email"
                                 className="px-4 py-2 h-auto rounded border border-black/40 text-xs"
@@ -38,6 +72,8 @@ export default function Login() {
                             </label>
                             <Input
                                 type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password"
                                 className="px-4 py-2 h-auto rounded border border-black/40 text-xs"
                             />

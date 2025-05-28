@@ -10,18 +10,20 @@ import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import FolderList from "../pages/FolderList";
 import MyFolder from "../pages/MyFolder";
+import UserInfo from "../pages/UserInfo";
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-  <HashRouter>
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Login />} />
-        <Route path="signup" element={<Signup />} />
-        <Route path="folder" element={<FolderList />} />
-        <Route path="myfolder" element={<MyFolder />} />
-        <Route path="*" element={<div>Not Found</div>} />
-      </Route>
-    </Routes>
-  </HashRouter>
+    <HashRouter>
+        <Routes>
+            <Route path="/" element={<Layout />}>
+                <Route index element={<Login />} />
+                <Route path="signup" element={<Signup />} />
+                <Route path="folder" element={<FolderList />} />
+                <Route path="myfolder" element={<MyFolder />} />
+                <Route path="userInfo" element={<UserInfo />} />
+                <Route path="*" element={<div>Not Found</div>} />
+            </Route>
+        </Routes>
+    </HashRouter>
 );

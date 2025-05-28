@@ -1,7 +1,7 @@
 import React from "react";
 
 const RadioGroup = ({ children, className = "", value, onValueChange }) => {
-    // 자식들에 onChange를 자동으로 주입해줄 수 있음
+
     const enhancedChildren = React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.props.value !== undefined) {
             return React.cloneElement(child, {
