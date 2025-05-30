@@ -1,6 +1,7 @@
-import React from "react";
-import MyFolderItem from "./MyfolderItem";
+import MyFolderHeader from "./MyFolderHeader";
+import MyFolderItem from "./MyFolderItem";
 
+const folderName = "새 장바구니1";
 const items = [
   {
     imageSrc: "/assets/item1.png",
@@ -18,6 +19,8 @@ const items = [
     },
     breadcrumbs: ["카테고리", "상의", "아우터", "가디건"],
     hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
+    review: "이곳에서 review summary를 확인합니다.",
+    fit: "",
   },
   {
     imageSrc: "/assets/item2.png",
@@ -35,12 +38,16 @@ const items = [
     },
     breadcrumbs: ["카테고리", "상의", "셔츠"],
     hashtags: ["상의", "봄신상", "가디건"],
+    review: "",
+    fit: "이곳에서 핏을 확인합니다",
   },
 ];
 
 const MyFolder = () => {
   return (
     <div className="p-5">
+      <MyFolderHeader folderName={folderName} />
+
       {items.map((item, idx) => (
         <MyFolderItem key={idx} itemInfo={item} />
       ))}
