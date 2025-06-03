@@ -17,11 +17,11 @@ export default function UrlDropper({ items, setItems }) {
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
       const parsed = new URL(urlString);
 
-      // 1) style_id: 마지막 세그먼트
+      // 1) style_id: 마지막 경로 조각
       const segments = parsed.pathname.split("/");
       const styleId = segments.filter((seg) => seg.length > 0).pop() || "";
 
-      // 2) site_id: 호스트네임으로 분기
+      // 2) site_id: 호스트명으로 분기
       const hostname = parsed.hostname.toLowerCase();
       let siteId = "";
       if (hostname.includes("zigzag.kr")) {
@@ -33,27 +33,26 @@ export default function UrlDropper({ items, setItems }) {
         return;
       }
 
-      // 3) API 요청
-      const payload = [{ site_id: siteId, style_id: styleId }];
-      const response = await fetch(`${baseUrl}/api/styles`, {
+      // 3) POST /api/styles
+      const stylePayload = [{ site_id: siteId, style_id: styleId }];
+      const styleResp = await fetch(`${baseUrl}/api/styles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(stylePayload),
       });
-      if (!response.ok) {
-        console.error("API 요청 실패:", await response.text());
+      if (!styleResp.ok) {
+        console.error("POST /api/styles 실패:", await styleResp.text());
         alert("스타일 등록에 실패했습니다.");
         return;
       }
 
-      // 4) 원본 JSON 파싱: { "8074": { … }, ... }
-      const rawData = await response.json();
-      // rawData 안의 값들(StyleInfoResponse 객체들)만 꺼내서 배열로 만들고
-      const rawArray = Object.values(rawData);
+      // 4) 응답 JSON 파싱
+      const rawResponse = await styleResp.json();
+      // rawResponse 예: { "8074": { … }, … }
+      const entries = Object.entries(rawResponse); // [ [rawKey, styleObj], … ]
 
-      // 5) UI용 itemInfo 구조로 매핑
-      const mappedNewItems = rawArray.map((style) => {
-        // 가격/할인 계산
+      // 5) 새 아이템들을 UI용 구조로 매핑
+      const mappedNewItems = entries.map(([rawKey, style]) => {
         const originalPrice = style.price?.original_price;
         const salePrice = style.price?.price;
         let discountRate = 0;
@@ -69,14 +68,12 @@ export default function UrlDropper({ items, setItems }) {
           discountLabel = `${discountRate}%`;
         }
 
-        // breadcrumbs: "카테고리1->카테고리2" → ["카테고리1", "카테고리2"]
         const breadcrumbs =
           Array.isArray(style.facets.category) &&
           style.facets.category.length > 0
-            ? style.facets.category[0].split("->").map((p) => p.trim())
+            ? style.facets.category[0].split("->").map((s) => s.trim())
             : [];
 
-        // hashtags: 브랜드 + 카테고리 전체
         const hashtags = [];
         if (
           Array.isArray(style.facets.brand) &&
@@ -92,21 +89,22 @@ export default function UrlDropper({ items, setItems }) {
         }
 
         return {
+          rawKey,
+          rawData: style,
+
+          style_id: style.style_idx,
           imageSrc: style.image.origin,
           platform:
-            style.site_id === "vPu2SsvYkCYXDCiz"
-              ? "지그재그"
-              : style.site_id === "iylQhcSbkgVxi0Ye"
+            style.site_id === "iylQhcSbkgVxi0Ye"
               ? "무신사"
+              : style.site_id === "vPu2SsvYkCYXDCiz"
+              ? "지그재그"
               : style.site_id || "",
           brandName: Array.isArray(style.facets.brand)
             ? style.facets.brand[0]
             : "",
           productTitle: style.name,
-          discount: {
-            rate: discountRate,
-            label: discountLabel,
-          },
+          discount: { rate: discountRate, label: discountLabel },
           price: {
             amount: salePrice || 0,
             currency: style.price?.currency || "",
@@ -120,12 +118,38 @@ export default function UrlDropper({ items, setItems }) {
         };
       });
 
-      // 6) 기존 items 뒤에 새로 매핑된 아이템들을 합쳐서 업데이트
-      setItems((prev) => [...prev, ...mappedNewItems]);
+      // 6) setItems + PUT /api/baskets (딱 한 번만)
+      const updatedItems = [...items, ...mappedNewItems];
+      setItems(updatedItems);
 
-      alert(`style_id: ${styleId}\nsite_id: ${siteId} → 정상 등록 완료`);
+      // → 여기서 PUT 호출 (drop 이벤트 발생 시에만)
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const basketName = "test1";
+      const putUrl = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
+        token
+      )}`;
+
+      const payloadObject = {};
+      updatedItems.forEach((item) => {
+        payloadObject[item.rawKey] = item.rawData;
+      });
+
+      const putResp = await fetch(putUrl, {
+        method: "PUT", // ← 여기서 PUT
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadObject),
+      });
+      if (!putResp.ok) {
+        console.error("PUT /api/baskets 실패:", await putResp.text());
+      }
+
+      alert(
+        `style_id: ${styleId}\nsite_id: ${siteId} → 정상 등록 및 저장 완료`
+      );
     } catch (err) {
-      console.error("잘못된 URL 형식입니다:", err);
+      console.error("드롭 처리 중 에러:", err);
       alert("유효한 URL을 드롭해주세요.");
     }
   };
