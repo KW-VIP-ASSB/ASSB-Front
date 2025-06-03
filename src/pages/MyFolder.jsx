@@ -1,49 +1,118 @@
+import React, { useState, useEffect } from "react";
 import MyFolderHeader from "./MyFolderHeader";
 import MyFolderItem from "./MyFolderItem";
 
-const folderName = "새 장바구니1";
-const items = [
-  {
-    imageSrc: "/assets/item1.png",
-    platform: "지그재그",
-    brandName: "대충브랜드이름",
-    productTitle: "봄신상새내기개강룩어쩌고저쩌고대충가디건",
-    discount: {
-      rate: 45,
-      label: "45%",
-    },
-    price: {
-      amount: 12345,
-      currency: "KRW",
-      formatted: "12,345원",
-    },
-    breadcrumbs: ["카테고리", "상의", "아우터", "가디건"],
-    hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
-    review: "이곳에서 review summary를 확인합니다.",
-    fit: "",
-  },
-  {
-    imageSrc: "/assets/item2.png",
-    platform: "무신사",
-    brandName: "다른브랜드이름",
-    productTitle: "세미 오버핏 가디건 - 3color",
-    discount: {
-      rate: 90,
-      label: "90%",
-    },
-    price: {
-      amount: 2345,
-      currency: "KRW",
-      formatted: "25,900원",
-    },
-    breadcrumbs: ["카테고리", "상의", "셔츠"],
-    hashtags: ["상의", "봄신상", "가디건"],
-    review: "",
-    fit: "이곳에서 핏을 확인합니다",
-  },
-];
+export default function MyFolder() {
+  const [folderName, setFolderName] = useState("로딩 중...");
+  const [items, setItems] = useState([]);
 
-const MyFolder = () => {
+  useEffect(() => {
+    const fetchFolder = async () => {
+      try {
+        // (1) 로그인 시 localStorage에 저장된 토큰을 꺼내온다
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("토큰이 없습니다. 로그인 후 다시 시도하세요.");
+          return;
+        }
+
+        // (2) 백엔드 URL (환경 변수 또는 하드코딩)
+        const baseUrl = import.meta.env.VITE_BACKEND_URL;
+        const basketName = "test1"; // 요청할 장바구니 이름
+        const url = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
+          token
+        )}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          console.error(
+            "장바구니 데이터를 불러오지 못했습니다:",
+            response.statusText
+          );
+          return;
+        }
+
+        const json = await response.json();
+        if (!json.success || !json.data) {
+          console.error("서버 응답이 올바르지 않습니다:", json.message);
+          return;
+        }
+
+        // (3) 폴더 이름 세팅
+        setFolderName(json.data.name || "이름 없음");
+
+        // (4) style_infos 객체를 배열 형태로 변환
+        const styleInfos = json.data.style_infos || {};
+        const mappedItems = Object.values(styleInfos).map((style) => {
+          const originalPrice = style.price.original_price;
+          const salePrice = style.price.price;
+          const discountRate = Math.round(
+            ((originalPrice - salePrice) / originalPrice) * 100
+          );
+
+          // "셔츠/남방/블라우스->셔츠/남방" → ["셔츠/남방/블라우스", "셔츠/남방"]
+          let breadcrumbs = [];
+          if (
+            Array.isArray(style.facets.category) &&
+            style.facets.category.length > 0
+          ) {
+            const rawCat = style.facets.category[0];
+            breadcrumbs = rawCat.split("->").map((part) => part.trim());
+          }
+
+          // 해시태그: 브랜드명 + 카테고리 전체 (필요시 "/" 기준 분리 가능)
+          const hashtags = [];
+          if (
+            Array.isArray(style.facets.brand) &&
+            style.facets.brand.length > 0
+          ) {
+            hashtags.push(style.facets.brand[0]);
+          }
+          if (
+            Array.isArray(style.facets.category) &&
+            style.facets.category.length > 0
+          ) {
+            hashtags.push(style.facets.category[0]);
+          }
+
+          return {
+            imageSrc: style.image.origin,
+            platform: style.site_id || "",
+            brandName: Array.isArray(style.facets.brand)
+              ? style.facets.brand[0]
+              : "",
+            productTitle: style.name,
+            discount: {
+              rate: discountRate,
+              label: `${discountRate}%`,
+            },
+            price: {
+              amount: salePrice,
+              currency: style.price.currency,
+              formatted: `${salePrice.toLocaleString()}원`,
+            },
+            breadcrumbs,
+            hashtags,
+            review: style.metadata?.description || "",
+            fit: "",
+          };
+        });
+
+        setItems(mappedItems);
+      } catch (error) {
+        console.error("장바구니 데이터 요청 중 오류 발생:", error);
+      }
+    };
+
+    fetchFolder();
+  }, []);
+
   return (
     <div className="p-5">
       <MyFolderHeader folderName={folderName} />
@@ -53,6 +122,4 @@ const MyFolder = () => {
       ))}
     </div>
   );
-};
-
-export default MyFolder;
+}
