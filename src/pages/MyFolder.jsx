@@ -10,7 +10,7 @@ export default function MyFolder() {
   const [isDragging, setIsDragging] = useState(false);
   const basketName = "test1";
 
-  // 1) 컴포넌트 마운트 시 한 번만 기존 장바구니 GET 요청
+  // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
   useEffect(() => {
     const fetchFolder = async () => {
       try {
@@ -39,7 +39,7 @@ export default function MyFolder() {
 
         setFolderName(json.data.name || "이름 없음");
         const styleInfos = json.data.style_infos || {};
-        const entries = Object.entries(styleInfos);
+        const entries = Object.entries(styleInfos); // [ [rawKey, styleObj], ... ]
 
         const mappedItems = entries.map(([rawKey, style]) => {
           const originalPrice = style.price?.original_price;
@@ -111,31 +111,83 @@ export default function MyFolder() {
         console.error("GET 에러:", err);
       }
     };
-
     fetchFolder();
   }, []);
+
+  // 2) 항목 삭제 시 호출: items에서 제거 + PUT 요청
+  const handleDelete = async (rawKeyToDelete) => {
+    // 2-1) state에서 삭제
+    const filtered = items.filter((item) => item.rawKey !== rawKeyToDelete);
+    setItems(filtered);
+
+    // 2-2) PUT 요청: filtered 배열을 rawKey/rawData 형태로 전송
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
+        token
+      )}`;
+
+      const payloadObject = {};
+      filtered.forEach((item) => {
+        payloadObject[item.rawKey] = item.rawData;
+      });
+
+      const putResp = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadObject),
+      });
+      if (!putResp.ok) {
+        console.error("삭제 후 PUT 실패:", await putResp.text());
+      }
+    } catch (err) {
+      console.error("삭제 후 PUT 에러:", err);
+    }
+  };
+
+  // 드래그 화면 이탈 시
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  // 드래그 진입 시
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  // 드래그 화면 위 이동 시
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  // 드롭 시
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   return (
     <div
       className="relative"
-      onDragEnter={(e) => {
-        e.preventDefault();
-        setIsDragging(true);
-      }}
-      onDragOver={(e) => {
-        e.preventDefault();
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragging(false);
-      }}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div className="p-5">
         <MyFolderHeader folderName={folderName} />
-
         <div className="mt-6 space-y-4">
           {items.map((item, idx) => (
-            <MyFolderItem key={idx} itemInfo={item} />
+            <MyFolderItem
+              key={idx}
+              itemInfo={item}
+              onDelete={() => handleDelete(item.rawKey)}
+            />
           ))}
         </div>
       </div>

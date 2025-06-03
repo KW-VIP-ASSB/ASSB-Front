@@ -1,7 +1,7 @@
-// 각 장바구니 내부의 아이템
+// MyFolderItem.jsx
 import { useEffect, useState } from "react";
 
-const MyFolderItem = ({ itemInfo }) => {
+const MyFolderItem = ({ itemInfo, onDelete }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
 
@@ -27,7 +27,7 @@ const MyFolderItem = ({ itemInfo }) => {
     <div className="w-full">
       <div className="flex w-full py-4">
         <div className="flex w-1/5 items-center">
-          <img src={imageSrc} className="w-40 h-auto"></img>
+          <img src={imageSrc} className="w-40 h-auto" alt={productTitle} />
         </div>
         <div className="px-4 w-4/5">
           <div className="text-xs text-gray-500">{platform}</div>
@@ -57,22 +57,21 @@ const MyFolderItem = ({ itemInfo }) => {
 
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                setReviewOpen(true);
-              }}
+              onClick={() => setReviewOpen(true)}
               className="px-3 py-1 border border-black text-sm cursor-pointer duration-150 hover:bg-black hover:text-white"
             >
               리뷰 요약
             </button>
             <button
-              onClick={() => {
-                setFitOpen(true);
-              }}
+              onClick={() => setFitOpen(true)}
               className="px-3 py-1 border border-black bg-black text-white text-sm cursor-pointer duration-150 hover:bg-white hover:text-black"
             >
               핏 확인하기
             </button>
-            <button className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white">
+            <button
+              onClick={onDelete}
+              className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white"
+            >
               삭제
             </button>
           </div>
@@ -81,7 +80,6 @@ const MyFolderItem = ({ itemInfo }) => {
 
       {reviewOpen && (
         <div className="overflow-hidden">
-          {/* 헤더: 클릭하면 open 토글 */}
           <div
             className="flex justify-between items-center cursor-pointer select-none"
             onClick={() => setReviewOpen((o) => !o)}
@@ -104,15 +102,12 @@ const MyFolderItem = ({ itemInfo }) => {
               />
             </svg>
           </div>
-
-          {/* open 상태일 때만 본문 */}
           {reviewOpen && <p className="p-3 border text-sm">{review}</p>}
         </div>
       )}
 
       {fitOpen && (
         <div className="overflow-hidden">
-          {/* 헤더: 클릭하면 open 토글 */}
           <div
             className="flex justify-between items-center cursor-pointer select-none"
             onClick={() => setFitOpen((o) => !o)}
@@ -135,8 +130,6 @@ const MyFolderItem = ({ itemInfo }) => {
               />
             </svg>
           </div>
-
-          {/* open 상태일 때만 본문 */}
           {fitOpen && <p className="p-3 border text-sm">{fit}</p>}
           {fitOpen && (
             <div className="flex gap-2 mt-2">

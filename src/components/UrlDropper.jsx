@@ -54,9 +54,9 @@ export default function UrlDropper({ items, setItems, onFinished }) {
 
       // 4) 응답 JSON 파싱
       const rawResponse = await styleResp.json();
-      const entries = Object.entries(rawResponse);
+      const entries = Object.entries(rawResponse); // [[rawKey, styleObj], ...]
 
-      // 5) 새 아이템들을 UI용 구조로 매핑
+      // 5) 매핑
       const mappedNewItems = entries.map(([rawKey, style]) => {
         const originalPrice = style.price?.original_price;
         const salePrice = style.price?.price;
@@ -96,7 +96,6 @@ export default function UrlDropper({ items, setItems, onFinished }) {
         return {
           rawKey,
           rawData: style,
-
           style_id: style.style_idx,
           imageSrc: style.image.origin,
           platform:
@@ -123,7 +122,7 @@ export default function UrlDropper({ items, setItems, onFinished }) {
         };
       });
 
-      // 6) setItems 후 PUT /api/baskets (drop 이벤트 한번만)
+      // 6) setItems + PUT /api/baskets (drop 시 한 번만)
       const updatedItems = [...items, ...mappedNewItems];
       setItems(updatedItems);
 
@@ -162,6 +161,10 @@ export default function UrlDropper({ items, setItems, onFinished }) {
     <div
       className="fixed inset-0 z-50 bg-white bg-opacity-80 flex items-center justify-center"
       onDragOver={handleDragOver}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        onFinished();
+      }}
       onDrop={handleDrop}
     >
       <div className="border-2 border-dashed border-gray-400 p-10 text-center rounded-lg bg-white">
