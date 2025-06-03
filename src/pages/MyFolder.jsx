@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import MyFolderHeader from "./MyFolderHeader";
 import MyFolderItem from "./MyFolderItem";
+import UrlDropper from "../components/UrlDropper";
 
 export default function MyFolder() {
   const [folderName, setFolderName] = useState("로딩 중...");
@@ -52,9 +53,9 @@ export default function MyFolder() {
         const mappedItems = Object.values(styleInfos).map((style) => {
           const originalPrice = style.price.original_price;
           const salePrice = style.price.price;
-          const discountRate = Math.round(
-            ((originalPrice - salePrice) / originalPrice) * 100
-          );
+          // const discountRate = Math.round(
+          //   ((originalPrice - salePrice) / originalPrice) * 100
+          // );
 
           // "셔츠/남방/블라우스->셔츠/남방" → ["셔츠/남방/블라우스", "셔츠/남방"]
           let breadcrumbs = [];
@@ -81,6 +82,19 @@ export default function MyFolder() {
             hashtags.push(style.facets.category[0]);
           }
 
+          let discountRate = 0;
+          let discountLabel = "";
+          if (
+            typeof originalPrice === "number" &&
+            typeof salePrice === "number" &&
+            originalPrice > 0
+          ) {
+            discountRate = Math.round(
+              ((originalPrice - salePrice) / originalPrice) * 100
+            );
+            discountLabel = `${discountRate}%`;
+          }
+
           return {
             imageSrc: style.image.origin,
             platform:
@@ -95,7 +109,7 @@ export default function MyFolder() {
             productTitle: style.name,
             discount: {
               rate: discountRate,
-              label: `${discountRate}%`,
+              label: discountLabel,
             },
             price: {
               amount: salePrice,
@@ -118,10 +132,14 @@ export default function MyFolder() {
     fetchFolder();
   }, []);
 
+  useEffect(() => {
+    console.log(items);
+  });
+
   return (
     <div className="p-5">
       <MyFolderHeader folderName={folderName} />
-
+      <UrlDropper items={items} setItems={setItems} />
       {items.map((item, idx) => (
         <MyFolderItem key={idx} itemInfo={item} />
       ))}
