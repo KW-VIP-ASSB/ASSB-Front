@@ -26,10 +26,10 @@ const MyFolderItem = ({ itemInfo }) => {
   return (
     <div className="w-full">
       <div className="flex w-full py-4">
-        <div className="flex items-center">
+        <div className="flex w-1/5 items-center">
           <img src={imageSrc} className="w-40 h-auto"></img>
         </div>
-        <div className="px-4">
+        <div className="px-4 w-4/5">
           <div className="text-xs text-gray-500">{platform}</div>
           <div className="mt-1 text-sm">{brandName}</div>
           <div className="mt-2 text-xl font-medium leading-snug">
