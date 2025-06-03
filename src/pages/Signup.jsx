@@ -1,6 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
+    const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -47,19 +51,36 @@ export default function Signup() {
         }));
     };
 
-    const handleSubmit = async (e) => {
-        console.log("Form submitted:", { ...formData, styles: selectedStyles });
-        alert("회원가입이 완료되었습니다!");
-        const res = await fetch("/api/signup", {
+    const handleSubmit = async () => {
+        const requestData = {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            is_active: true,
+            data: {
+                additionalProp1: {
+                    gender: formData.gender,
+                    birthDate: formData.birthDate,
+                    height: formData.height,
+                    weight: formData.weight,
+                    footSize: formData.footSize,
+                    personalColor1: formData.personalColor1,
+                    personalColor2: formData.personalColor2,
+                },
+            },
+        };
+        console.log(requestData);
+        const res = await fetch(`${baseUrl}/api/users/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(requestData),
         });
 
         if (res.ok) {
             alert("회원가입 성공");
+            navigate("/");
         } else {
             alert("회원가입 실패");
         }

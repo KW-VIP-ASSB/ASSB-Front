@@ -4,41 +4,43 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 
-const handleSubmit = async (e) => {
-    e.preventDefault(); // 기본 제출 막기
-
-    try {
-        const response = await fetch("/api/users/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-            alert("로그인 실패");
-            return;
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.data?.token) {
-            localStorage.setItem("token", data.data.token);
-            console.log("로그인 성공, 토큰 저장됨:", data.data.token);
-            navigate("/folder");
-        } else {
-            alert("로그인 실패: " + (data.message || "Unknown error"));
-        }
-    } catch (error) {
-        console.error("로그인 에러:", error);
-        alert("서버 오류");
-    }
-};
 export default function Login() {
+    const baseUrl = import.meta.env.VITE_BACKEND_URL;
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch(`${baseUrl}/api/users/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (!response.ok) {
+                alert("로그인 실패");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.data?.token) {
+                localStorage.setItem("token", data.data.token);
+                console.log("로그인 성공, 토큰 저장됨:", data.data.token);
+                navigate("/folder");
+            } else {
+                alert("로그인 실패: " + (data.message || "Unknown error"));
+            }
+        } catch (error) {
+            console.error("로그인 에러:", error);
+            alert("서버 오류");
+        }
+    };
     return (
         <div className="flex items-center justify-center h-screen px-4 bg-white">
             <Card className="w-full max-w-sm">

@@ -1,6 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
+    const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -48,6 +52,23 @@ export default function Signup() {
     };
 
     const handleSubmit = async (e) => {
+        const requestData = {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            is_active: true,
+            data: {
+                additionalProp1: {
+                    gender: formData.gender,
+                    birthDate: formData.birthDate,
+                    height: formData.height,
+                    weight: formData.weight,
+                    footSize: formData.footSize,
+                    personalColor1: formData.personalColor1,
+                    personalColor2: formData.personalColor2,
+                },
+            },
+        };
         e.preventDefault();
 
         const token = localStorage.getItem("token");
@@ -56,21 +77,19 @@ export default function Signup() {
             return;
         }
         try {
-            const response = await fetch(`/api/users/${token}`, {
+            const response = await fetch(`${baseUrl}/api/users/${token}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    styles: selectedStyles,
-                }),
+                body: JSON.stringify(requestData),
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
                 alert("회원정보 업데이트 완료");
+                navigate("/folder");
             } else {
                 alert("업데이트 실패: " + (result.message || "Unknown error"));
             }
