@@ -1,6 +1,7 @@
+// UrlDropper.jsx
 import React from "react";
 
-export default function UrlDropper({ items, setItems }) {
+export default function UrlDropper({ items, setItems, onFinished }) {
   const handleDragOver = (e) => {
     e.preventDefault();
   };
@@ -8,20 +9,23 @@ export default function UrlDropper({ items, setItems }) {
   const handleDrop = async (e) => {
     e.preventDefault();
 
-    const urlString =
-      e.dataTransfer.getData("text/uri-list") ||
-      e.dataTransfer.getData("text/plain");
-    if (!urlString) return;
-
     try {
+      const urlString =
+        e.dataTransfer.getData("text/uri-list") ||
+        e.dataTransfer.getData("text/plain");
+      if (!urlString) {
+        onFinished();
+        return;
+      }
+
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
       const parsed = new URL(urlString);
 
-      // 1) style_id: 마지막 경로 조각
+      // 1) style_id: 마지막 경로 세그먼트
       const segments = parsed.pathname.split("/");
       const styleId = segments.filter((seg) => seg.length > 0).pop() || "";
 
-      // 2) site_id: 호스트명으로 분기
+      // 2) site_id: 호스트네임 분기
       const hostname = parsed.hostname.toLowerCase();
       let siteId = "";
       if (hostname.includes("zigzag.kr")) {
@@ -30,6 +34,7 @@ export default function UrlDropper({ items, setItems }) {
         siteId = "iylQhcSbkgVxi0Ye";
       } else {
         alert("지원하지 않는 사이트입니다: " + hostname);
+        onFinished();
         return;
       }
 
@@ -43,13 +48,13 @@ export default function UrlDropper({ items, setItems }) {
       if (!styleResp.ok) {
         console.error("POST /api/styles 실패:", await styleResp.text());
         alert("스타일 등록에 실패했습니다.");
+        onFinished();
         return;
       }
 
       // 4) 응답 JSON 파싱
       const rawResponse = await styleResp.json();
-      // rawResponse 예: { "8074": { … }, … }
-      const entries = Object.entries(rawResponse); // [ [rawKey, styleObj], … ]
+      const entries = Object.entries(rawResponse);
 
       // 5) 새 아이템들을 UI용 구조로 매핑
       const mappedNewItems = entries.map(([rawKey, style]) => {
@@ -118,31 +123,28 @@ export default function UrlDropper({ items, setItems }) {
         };
       });
 
-      // 6) setItems + PUT /api/baskets (딱 한 번만)
+      // 6) setItems 후 PUT /api/baskets (drop 이벤트 한번만)
       const updatedItems = [...items, ...mappedNewItems];
       setItems(updatedItems);
 
-      // → 여기서 PUT 호출 (drop 이벤트 발생 시에만)
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (token) {
+        const putUrl = `${baseUrl}/api/baskets/test1?token=${encodeURIComponent(
+          token
+        )}`;
+        const payloadObject = {};
+        updatedItems.forEach((item) => {
+          payloadObject[item.rawKey] = item.rawData;
+        });
 
-      const basketName = "test1";
-      const putUrl = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
-        token
-      )}`;
-
-      const payloadObject = {};
-      updatedItems.forEach((item) => {
-        payloadObject[item.rawKey] = item.rawData;
-      });
-
-      const putResp = await fetch(putUrl, {
-        method: "PUT", // ← 여기서 PUT
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadObject),
-      });
-      if (!putResp.ok) {
-        console.error("PUT /api/baskets 실패:", await putResp.text());
+        const putResp = await fetch(putUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadObject),
+        });
+        if (!putResp.ok) {
+          console.error("PUT /api/baskets 실패:", await putResp.text());
+        }
       }
 
       alert(
@@ -151,16 +153,22 @@ export default function UrlDropper({ items, setItems }) {
     } catch (err) {
       console.error("드롭 처리 중 에러:", err);
       alert("유효한 URL을 드롭해주세요.");
+    } finally {
+      onFinished();
     }
   };
 
   return (
     <div
+      className="fixed inset-0 z-50 bg-white bg-opacity-80 flex items-center justify-center"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="border-2 border-dashed border-gray-400 p-10 text-center rounded-lg"
     >
-      <p>여기에 URL을 드래그 앤 드롭하세요</p>
+      <div className="border-2 border-dashed border-gray-400 p-10 text-center rounded-lg bg-white">
+        <p className="text-sm text-gray-700">
+          여기에 URL을 드래그 앤 드롭하세요
+        </p>
+      </div>
     </div>
   );
 }
