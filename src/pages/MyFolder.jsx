@@ -83,7 +83,12 @@ export default function MyFolder() {
 
           return {
             imageSrc: style.image.origin,
-            platform: style.site_id || "",
+            platform:
+              style.site_id === "iylQhcSbkgVxi0Ye"
+                ? "무신사"
+                : style.site_id === "vPu2SsvYkCYXDCiz"
+                ? "지그재그"
+                : style.site_id || "",
             brandName: Array.isArray(style.facets.brand)
               ? style.facets.brand[0]
               : "",
