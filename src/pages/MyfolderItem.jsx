@@ -147,7 +147,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               핏 확인하기
             </button>
             <button
-              onClick={onDelete}
+              onClick={() => onDelete(rawKey)}
               className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white"
             >
               삭제

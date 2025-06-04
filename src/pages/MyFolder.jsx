@@ -16,6 +16,14 @@ export default function MyFolder() {
   //   console.log(isDragging);
   // }, [isDragging]);
 
+  useEffect(() => {
+    console.log("🔄 items 배열 변경됨:", items.length, "개");
+    console.log(
+      "현재 rawKey 목록:",
+      items.map((item) => item.rawKey)
+    );
+  }, [items]);
+
   // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
   useEffect(() => {
     const fetchFolder = async () => {
@@ -140,6 +148,7 @@ export default function MyFolder() {
       filtered.forEach((item) => {
         payloadObject[item.rawKey] = item.rawData;
       });
+      console.log(payloadObject);
 
       const putResp = await fetch(url, {
         method: "PUT",
