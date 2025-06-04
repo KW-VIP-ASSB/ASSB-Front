@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 const MyFolderItem = ({ itemInfo, onDelete }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState("");
 
   const {
     imageSrc,
@@ -16,12 +17,44 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     hashtags,
     review,
     fit,
+    rawKey, // added rawKey to destructuring
   } = itemInfo;
 
   useEffect(() => {
     if (itemInfo.review) setReviewOpen(true);
     if (itemInfo.fit) setFitOpen(true);
   }, [itemInfo.review, itemInfo.fit]);
+
+  const fetchReviewSummarize = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return console.error("토큰이 없습니다.");
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/llm/summarize`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token,
+          style_id: rawKey, // Use rawKey here
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("POST 실패:", response.statusText);
+        return;
+      }
+
+      // Handle the response if needed (e.g., show a success message, etc.)
+      const result = await response.json();
+
+      setReviewSummary(result.summary);
+    } catch (error) {
+      console.error("Error fetching review summary:", error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -57,7 +90,10 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
 
           <div className="flex gap-2">
             <button
-              onClick={() => setReviewOpen(true)}
+              onClick={() => {
+                setReviewOpen(true);
+                fetchReviewSummarize(); // Trigger fetch when button is clicked
+              }}
               className="px-3 py-1 border border-black text-sm cursor-pointer duration-150 hover:bg-black hover:text-white"
             >
               리뷰 요약
@@ -102,7 +138,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               />
             </svg>
           </div>
-          {reviewOpen && <p className="p-3 border text-sm">{review}</p>}
+          {reviewOpen && <p className="p-3 border text-sm">{reviewSummary}</p>}
         </div>
       )}
 
