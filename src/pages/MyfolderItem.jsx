@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 const MyFolderItem = ({ itemInfo, onDelete }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState("");
 
   const {
     imageSrc,
@@ -16,12 +17,86 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     hashtags,
     review,
     fit,
+    rawKey, // added rawKey to destructuring
   } = itemInfo;
 
   useEffect(() => {
     if (itemInfo.review) setReviewOpen(true);
     if (itemInfo.fit) setFitOpen(true);
   }, [itemInfo.review, itemInfo.fit]);
+
+  // API 응답 데이터를 포매팅하는 함수
+  const formatReviewSummary = (data) => {
+    if (!data || !data.overall_rating) return "";
+
+    const { overall_rating, pros, cons, summary } = data;
+
+    let formatted = "";
+
+    // 전체 평가
+    formatted += `📊 전체 평가\n`;
+    formatted += `평점: ${overall_rating.score}/5.0\n`;
+    formatted += `추천도: ${overall_rating.recommendation}\n`;
+    formatted += `만족도: ${overall_rating.satisfaction}\n\n`;
+
+    // 장점
+    if (pros && pros.length > 0) {
+      formatted += `✅ 장점\n`;
+      pros.forEach((pro) => {
+        formatted += `• ${pro}\n`;
+      });
+      formatted += `\n`;
+    }
+
+    // 단점
+    if (cons && cons.length > 0) {
+      formatted += `❌ 단점\n`;
+      cons.forEach((con) => {
+        formatted += `• ${con}\n`;
+      });
+      formatted += `\n`;
+    }
+
+    // 요약
+    if (summary) {
+      formatted += `📝 종합 의견\n`;
+      formatted += `${summary}`;
+    }
+
+    return formatted;
+  };
+
+  const fetchReviewSummarize = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return console.error("토큰이 없습니다.");
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/llm/summarize`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token,
+          style_id: rawKey, // Use rawKey here
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("POST 실패:", response.statusText);
+        return;
+      }
+
+      const result = await response.json();
+
+      // 포매팅된 텍스트로 변환하여 저장
+      const formattedSummary = formatReviewSummary(result.data);
+      setReviewSummary(formattedSummary);
+    } catch (error) {
+      console.error("Error fetching review summary:", error);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -57,7 +132,10 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
 
           <div className="flex gap-2">
             <button
-              onClick={() => setReviewOpen(true)}
+              onClick={() => {
+                setReviewOpen(true);
+                fetchReviewSummarize(); // Trigger fetch when button is clicked
+              }}
               className="px-3 py-1 border border-black text-sm cursor-pointer duration-150 hover:bg-black hover:text-white"
             >
               리뷰 요약
@@ -69,7 +147,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               핏 확인하기
             </button>
             <button
-              onClick={onDelete}
+              onClick={() => onDelete(rawKey)}
               className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white"
             >
               삭제
@@ -102,7 +180,11 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               />
             </svg>
           </div>
-          {reviewOpen && <p className="p-3 border text-sm">{review}</p>}
+          {reviewOpen && (
+            <div className="p-3 border text-sm whitespace-pre-line">
+              {reviewSummary}
+            </div>
+          )}
         </div>
       )}
 

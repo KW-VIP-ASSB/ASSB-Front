@@ -7,7 +7,7 @@ const Header = () => {
   return (
     <div className="p-2">
       <div className="flex justify-between mb-2">
-        <div>Super Fitting</div>
+        <div onClick={() => navigate("/")}>Super Fitting</div>
         <div className="flex gap-2">
           <ShoppingCart strokeWidth={1.5} onClick={() => navigate("/folder")} />
           <User strokeWidth={1.5} onClick={() => navigate("/userInfo")} />

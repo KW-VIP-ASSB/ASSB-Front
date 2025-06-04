@@ -1,5 +1,6 @@
 // MyFolder.jsx
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import MyFolderHeader from "./MyFolderHeader";
 import MyFolderItem from "./MyFolderItem";
 import UrlDropper from "../components/UrlDropper";
@@ -8,7 +9,20 @@ export default function MyFolder() {
   const [folderName, setFolderName] = useState("로딩 중...");
   const [items, setItems] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const basketName = "test1";
+
+  const location = useLocation();
+  const basketName = new URLSearchParams(location.search).get("name") || null;
+  // useEffect(() => {
+  //   console.log(isDragging);
+  // }, [isDragging]);
+
+  useEffect(() => {
+    console.log("🔄 items 배열 변경됨:", items.length, "개");
+    console.log(
+      "현재 rawKey 목록:",
+      items.map((item) => item.rawKey)
+    );
+  }, [items]);
 
   // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
   useEffect(() => {
@@ -134,6 +148,7 @@ export default function MyFolder() {
       filtered.forEach((item) => {
         payloadObject[item.rawKey] = item.rawData;
       });
+      console.log(payloadObject);
 
       const putResp = await fetch(url, {
         method: "PUT",
@@ -151,29 +166,38 @@ export default function MyFolder() {
   // 드래그 화면 이탈 시
   const handleDragLeave = (e) => {
     e.preventDefault();
-    setIsDragging(false);
+    console.log("handleDragLeave");
+    // setIsDragging(false);
   };
 
   // 드래그 진입 시
   const handleDragEnter = (e) => {
     e.preventDefault();
-    setIsDragging(true);
+    if (isDragging) {
+      console.log("handleDragEnter");
+      setIsDragging(true);
+    }
   };
 
   // 드래그 화면 위 이동 시
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (!isDragging) {
+      console.log("handleDragOver");
+      setIsDragging(true);
+    }
   };
 
   // 드롭 시
   const handleDrop = (e) => {
     e.preventDefault();
+    console.log("handleDrop");
     setIsDragging(false);
   };
 
   return (
     <div
-      className="relative"
+      className="relative h-[90vh]"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
