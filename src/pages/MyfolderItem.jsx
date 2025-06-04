@@ -5,6 +5,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
   const [reviewSummary, setReviewSummary] = useState("");
+  const [fitAnalysis, setFitAnalysis] = useState("");
 
   const {
     imageSrc,
@@ -98,6 +99,68 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     }
   };
 
+  const fetchFitAnalysis = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return console.error("토큰이 없습니다.");
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/llm/fit-analysis`;
+
+      // itemInfo에서 필요한 데이터 추출
+      const requestBody = {
+        token: token,
+        site_id: itemInfo.platform || "", // platform을 site_id로 사용
+        style_data: {
+          style_idx: rawKey?.toString() || "",
+          site_id: itemInfo.platform || "",
+          name: itemInfo.productTitle || "",
+          url: itemInfo.url || "", // itemInfo에 url이 있다면 사용
+          data: itemInfo.rawData || {}, // rawData가 있다면 사용
+          price: itemInfo.price || {},
+          image: {
+            src: itemInfo.imageSrc || "",
+          },
+          metadata: {
+            brandName: itemInfo.brandName,
+            discount: itemInfo.discount,
+            breadcrumbs: itemInfo.breadcrumbs,
+            hashtags: itemInfo.hashtags,
+          },
+          facets: itemInfo.facets || {},
+          success: true,
+        },
+      };
+
+      console.log("핏 분석 요청 본문:", requestBody);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        console.error(
+          "핏 분석 POST 실패:",
+          response.status,
+          response.statusText
+        );
+        const errorText = await response.text();
+        console.error("에러 응답:", errorText);
+        return;
+      }
+
+      const result = await response.json();
+      console.log("핏 분석 응답:", result);
+
+      // 핏 분석 결과를 상태에 저장
+      setFitAnalysis(result.data || result);
+    } catch (error) {
+      console.error("Error fetching fit analysis:", error);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="flex w-full py-4">
@@ -141,7 +204,10 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               리뷰 요약
             </button>
             <button
-              onClick={() => setFitOpen(true)}
+              onClick={() => {
+                setFitOpen(true);
+                fetchFitAnalysis(); // 핏 분석 API 호출 추가
+              }}
               className="px-3 py-1 border border-black bg-black text-white text-sm cursor-pointer duration-150 hover:bg-white hover:text-black"
             >
               핏 확인하기
@@ -212,7 +278,11 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               />
             </svg>
           </div>
-          {fitOpen && <p className="p-3 border text-sm">{fit}</p>}
+          {fitOpen && (
+            <div className="p-3 border text-sm whitespace-pre-line">
+              {fitAnalysis || fit}
+            </div>
+          )}
           {fitOpen && (
             <div className="flex gap-2 mt-2">
               <button className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white">
