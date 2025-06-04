@@ -1,7 +1,11 @@
 // UrlDropper.jsx
 import React from "react";
+import { useLocation } from "react-router-dom";
 
 export default function UrlDropper({ items, setItems, onFinished }) {
+  const location = useLocation();
+  const basketName = new URLSearchParams(location.search).get("name") || null;
+
   const handleDragOver = (e) => {
     e.preventDefault();
   };
@@ -128,7 +132,7 @@ export default function UrlDropper({ items, setItems, onFinished }) {
 
       const token = localStorage.getItem("token");
       if (token) {
-        const putUrl = `${baseUrl}/api/baskets/test1?token=${encodeURIComponent(
+        const putUrl = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
           token
         )}`;
         const payloadObject = {};
