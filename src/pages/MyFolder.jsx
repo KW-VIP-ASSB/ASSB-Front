@@ -1,5 +1,6 @@
 // MyFolder.jsx
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import MyFolderHeader from "./MyFolderHeader";
 import MyFolderItem from "./MyFolderItem";
 import UrlDropper from "../components/UrlDropper";
@@ -8,8 +9,9 @@ export default function MyFolder() {
   const [folderName, setFolderName] = useState("로딩 중...");
   const [items, setItems] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const basketName = "test1";
 
+  const location = useLocation();
+  const basketName = new URLSearchParams(location.search).get("name") || null;
   // useEffect(() => {
   //   console.log(isDragging);
   // }, [isDragging]);

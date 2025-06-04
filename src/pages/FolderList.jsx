@@ -234,8 +234,13 @@ const FolderList = () => {
     setIsLoading(true);
     setError(null);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) return console.error("토큰이 없습니다.");
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
       const response = await fetch(
-        `${API_BASE_URL}/baskets/?token=${TOKEN}&skip=0&limit=100`,
+        `${baseUrl}/api/baskets/?token=${token}&skip=0&limit=100`,
         {
           headers: { accept: "application/json" },
         }
@@ -293,9 +298,14 @@ const FolderList = () => {
             ? cartData.style_infos
             : {};
 
+        const token = localStorage.getItem("token");
+        if (!token) return console.error("토큰이 없습니다.");
+
+        const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
         const basketNameForURL = encodeURIComponent(cartData.title);
         const response = await fetch(
-          `${API_BASE_URL}/baskets/${basketNameForURL}?token=${TOKEN}`,
+          `${baseUrl}/api/baskets/${basketNameForURL}?token=${token}`,
           {
             method: "PUT",
             headers: {
@@ -341,8 +351,14 @@ const FolderList = () => {
         }
       } else {
         // ---- CREATE new cart ----
+
+        const token = localStorage.getItem("token");
+        if (!token) return console.error("토큰이 없습니다.");
+
+        const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
         const response = await fetch(
-          `${API_BASE_URL}/baskets/?token=${TOKEN}&name=${encodeURIComponent(
+          `${baseUrl}/api/baskets/?token=${token}&name=${encodeURIComponent(
             cartData.title
           )}`,
           {
@@ -405,8 +421,8 @@ const FolderList = () => {
   };
 
   const handleNavigate = (cart) => {
-    console.log()
-    navigate(`/folder/${cart.id}`);
+    console.log();
+    navigate(`/myfolder?name=${cart.title}`);
   };
   // handleDeleteCart 함수 수정: cartId 대신 cartTitle (장바구니 이름)을 받도록 변경 가능하나,
   // UI에서는 cart.id를 전달하고 있으므로, 내부에서 cart.title을 사용하도록 조정합니다.
