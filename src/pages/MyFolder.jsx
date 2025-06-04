@@ -10,6 +10,10 @@ export default function MyFolder() {
   const [isDragging, setIsDragging] = useState(false);
   const basketName = "test1";
 
+  // useEffect(() => {
+  //   console.log(isDragging);
+  // }, [isDragging]);
+
   // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
   useEffect(() => {
     const fetchFolder = async () => {
@@ -151,29 +155,38 @@ export default function MyFolder() {
   // 드래그 화면 이탈 시
   const handleDragLeave = (e) => {
     e.preventDefault();
-    setIsDragging(false);
+    console.log("handleDragLeave");
+    // setIsDragging(false);
   };
 
   // 드래그 진입 시
   const handleDragEnter = (e) => {
     e.preventDefault();
-    setIsDragging(true);
+    if (isDragging) {
+      console.log("handleDragEnter");
+      setIsDragging(true);
+    }
   };
 
   // 드래그 화면 위 이동 시
   const handleDragOver = (e) => {
     e.preventDefault();
+    if (!isDragging) {
+      console.log("handleDragOver");
+      setIsDragging(true);
+    }
   };
 
   // 드롭 시
   const handleDrop = (e) => {
     e.preventDefault();
+    console.log("handleDrop");
     setIsDragging(false);
   };
 
   return (
     <div
-      className="relative"
+      className="relative h-[90vh]"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
