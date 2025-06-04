@@ -25,6 +25,47 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     if (itemInfo.fit) setFitOpen(true);
   }, [itemInfo.review, itemInfo.fit]);
 
+  // API 응답 데이터를 포매팅하는 함수
+  const formatReviewSummary = (data) => {
+    if (!data || !data.overall_rating) return "";
+
+    const { overall_rating, pros, cons, summary } = data;
+
+    let formatted = "";
+
+    // 전체 평가
+    formatted += `📊 전체 평가\n`;
+    formatted += `평점: ${overall_rating.score}/5.0\n`;
+    formatted += `추천도: ${overall_rating.recommendation}\n`;
+    formatted += `만족도: ${overall_rating.satisfaction}\n\n`;
+
+    // 장점
+    if (pros && pros.length > 0) {
+      formatted += `✅ 장점\n`;
+      pros.forEach((pro) => {
+        formatted += `• ${pro}\n`;
+      });
+      formatted += `\n`;
+    }
+
+    // 단점
+    if (cons && cons.length > 0) {
+      formatted += `❌ 단점\n`;
+      cons.forEach((con) => {
+        formatted += `• ${con}\n`;
+      });
+      formatted += `\n`;
+    }
+
+    // 요약
+    if (summary) {
+      formatted += `📝 종합 의견\n`;
+      formatted += `${summary}`;
+    }
+
+    return formatted;
+  };
+
   const fetchReviewSummarize = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -47,10 +88,11 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
         return;
       }
 
-      // Handle the response if needed (e.g., show a success message, etc.)
       const result = await response.json();
 
-      setReviewSummary(result.summary);
+      // 포매팅된 텍스트로 변환하여 저장
+      const formattedSummary = formatReviewSummary(result.data);
+      setReviewSummary(formattedSummary);
     } catch (error) {
       console.error("Error fetching review summary:", error);
     }
@@ -138,7 +180,11 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               />
             </svg>
           </div>
-          {reviewOpen && <p className="p-3 border text-sm">{reviewSummary}</p>}
+          {reviewOpen && (
+            <div className="p-3 border text-sm whitespace-pre-line">
+              {reviewSummary}
+            </div>
+          )}
         </div>
       )}
 
