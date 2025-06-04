@@ -20,6 +20,7 @@ root.render(
                 <Route index element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="folder" element={<FolderList />} />
+                <Route path="folder/:id" element={<MyFolder />} />
                 <Route path="myfolder" element={<MyFolder />} />
                 <Route path="userInfo" element={<UserInfo />} />
                 <Route path="*" element={<div>Not Found</div>} />

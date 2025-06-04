@@ -1,48 +1,49 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { PlusCircle, X, Edit, Trash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "http://superfitting.duckdns.org/api";
 const TOKEN = "Ng%3D%3D";
 
 // Placeholder body for creating/updating basket items, based on your cURL examples
-const DEFAULT_STYLE_INFOS_BODY = {
-  additionalProp1: {
-    style_idx: "string",
-    site_id: "string",
-    name: "string",
-    url: "string",
-    data: {},
-    price: { additionalProp1: {} },
-    image: { additionalProp1: {} },
-    metadata: {},
-    facets: { additionalProp1: {} },
-    success: true,
-  },
-  additionalProp2: {
-    style_idx: "string",
-    site_id: "string",
-    name: "string",
-    url: "string",
-    data: {},
-    price: { additionalProp1: {} },
-    image: { additionalProp1: {} },
-    metadata: {},
-    facets: { additionalProp1: {} },
-    success: true,
-  },
-  additionalProp3: {
-    style_idx: "string",
-    site_id: "string",
-    name: "string",
-    url: "string",
-    data: {},
-    price: { additionalProp1: {} },
-    image: { additionalProp1: {} },
-    metadata: {},
-    facets: { additionalProp1: {} },
-    success: true,
-  },
-};
+// const DEFAULT_STYLE_INFOS_BODY = {
+//   additionalProp1: {
+//     style_idx: "",
+//     site_id: "",
+//     name: "",
+//     url: "string",
+//     data: {},
+//     price: { additionalProp1: {} },
+//     image: { additionalProp1: {} },
+//     metadata: {},
+//     facets: { additionalProp1: {} },
+//     success: true,
+//   },
+//   additionalProp2: {
+//     style_idx: "string",
+//     site_id: "string",
+//     name: "string",
+//     url: "string",
+//     data: {},
+//     price: { additionalProp1: {} },
+//     image: { additionalProp1: {} },
+//     metadata: {},
+//     facets: { additionalProp1: {} },
+//     success: true,
+//   },
+//   additionalProp3: {
+//     style_idx: "string",
+//     site_id: "string",
+//     name: "string",
+//     url: "string",
+//     data: {},
+//     price: { additionalProp1: {} },
+//     image: { additionalProp1: {} },
+//     metadata: {},
+//     facets: { additionalProp1: {} },
+//     success: true,
+//   },
+// };
 
 const NewCartModal = ({
   onClose,
@@ -228,7 +229,7 @@ const FolderList = () => {
   const [editCart, setEditCart] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const navigate = useNavigate();
   const fetchCarts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -290,7 +291,7 @@ const FolderList = () => {
         const bodyForPut =
           cartData.style_infos && Object.keys(cartData.style_infos).length > 0
             ? cartData.style_infos
-            : DEFAULT_STYLE_INFOS_BODY;
+            : {};
 
         const basketNameForURL = encodeURIComponent(cartData.title);
         const response = await fetch(
@@ -350,7 +351,7 @@ const FolderList = () => {
               "Content-Type": "application/json",
               accept: "application/json",
             },
-            body: JSON.stringify(DEFAULT_STYLE_INFOS_BODY),
+            body: JSON.stringify({}),
           }
         );
         if (!response.ok) {
@@ -403,6 +404,10 @@ const FolderList = () => {
     }
   };
 
+  const handleNavigate = (cart) => {
+    console.log()
+    navigate(`/folder/${cart.id}`);
+  };
   // handleDeleteCart 함수 수정: cartId 대신 cartTitle (장바구니 이름)을 받도록 변경 가능하나,
   // UI에서는 cart.id를 전달하고 있으므로, 내부에서 cart.title을 사용하도록 조정합니다.
   const handleDeleteCart = async (cartIdToDelete) => {
@@ -512,6 +517,7 @@ const FolderList = () => {
           {carts.map((cart) => (
             <div
               key={cart.id} // React key는 고유한 cart.id 사용
+              onClick={() => handleNavigate(cart)}
               className="bg-gray-200 h-48 relative flex flex-col items-center justify-center p-4 text-lg font-medium break-words group"
               title={cart.description || cart.title}
             >
@@ -519,7 +525,10 @@ const FolderList = () => {
 
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-2 transition-opacity">
                 <button
-                  onClick={() => openEditModal(cart)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditModal(cart);
+                  }}
                   className="p-1 bg-white rounded hover:bg-gray-100"
                   aria-label="수정"
                   disabled={isLoading}
@@ -528,7 +537,10 @@ const FolderList = () => {
                 </button>
                 <button
                   // handleDeleteCart에는 cart.id (숫자 ID)를 전달하여 내부에서 title을 참조하도록 함
-                  onClick={() => handleDeleteCart(cart.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCart(cart.id);
+                  }}
                   className="p-1 bg-white rounded hover:bg-gray-100"
                   aria-label="삭제"
                   disabled={isLoading}
