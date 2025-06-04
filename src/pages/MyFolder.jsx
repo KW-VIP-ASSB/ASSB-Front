@@ -1,58 +1,204 @@
+// MyFolder.jsx
+import React, { useState, useEffect } from "react";
 import MyFolderHeader from "./MyFolderHeader";
 import MyFolderItem from "./MyFolderItem";
+import UrlDropper from "../components/UrlDropper";
 
-const folderName = "새 장바구니1";
-const items = [
-  {
-    imageSrc: "/assets/item1.png",
-    platform: "지그재그",
-    brandName: "대충브랜드이름",
-    productTitle: "봄신상새내기개강룩어쩌고저쩌고대충가디건",
-    discount: {
-      rate: 45,
-      label: "45%",
-    },
-    price: {
-      amount: 12345,
-      currency: "KRW",
-      formatted: "12,345원",
-    },
-    breadcrumbs: ["카테고리", "상의", "아우터", "가디건"],
-    hashtags: ["가디건", "상의", "가디건", "가디건", "가디건"],
-    review: "이곳에서 review summary를 확인합니다.",
-    fit: "",
-  },
-  {
-    imageSrc: "/assets/item2.png",
-    platform: "무신사",
-    brandName: "다른브랜드이름",
-    productTitle: "세미 오버핏 가디건 - 3color",
-    discount: {
-      rate: 90,
-      label: "90%",
-    },
-    price: {
-      amount: 2345,
-      currency: "KRW",
-      formatted: "25,900원",
-    },
-    breadcrumbs: ["카테고리", "상의", "셔츠"],
-    hashtags: ["상의", "봄신상", "가디건"],
-    review: "",
-    fit: "이곳에서 핏을 확인합니다",
-  },
-];
+export default function MyFolder() {
+  const [folderName, setFolderName] = useState("로딩 중...");
+  const [items, setItems] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const basketName = "test1";
 
-const MyFolder = () => {
+  // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
+  useEffect(() => {
+    const fetchFolder = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return console.error("토큰이 없습니다.");
+
+        const baseUrl = import.meta.env.VITE_BACKEND_URL;
+        const url = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
+          token
+        )}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!response.ok) {
+          console.error("GET 실패:", response.statusText);
+          return;
+        }
+
+        const json = await response.json();
+        if (!json.success || !json.data) {
+          console.error("올바르지 않은 응답:", json.message);
+          return;
+        }
+
+        setFolderName(json.data.name || "이름 없음");
+        const styleInfos = json.data.style_infos || {};
+        const entries = Object.entries(styleInfos); // [ [rawKey, styleObj], ... ]
+
+        const mappedItems = entries.map(([rawKey, style]) => {
+          const originalPrice = style.price?.original_price;
+          const salePrice = style.price?.price;
+          let discountRate = 0;
+          let discountLabel = "";
+          if (
+            typeof originalPrice === "number" &&
+            typeof salePrice === "number" &&
+            originalPrice > 0
+          ) {
+            discountRate = Math.round(
+              ((originalPrice - salePrice) / originalPrice) * 100
+            );
+            discountLabel = `${discountRate}%`;
+          }
+
+          const breadcrumbs =
+            Array.isArray(style.facets.category) &&
+            style.facets.category.length > 0
+              ? style.facets.category[0].split("->").map((s) => s.trim())
+              : [];
+
+          const hashtags = [];
+          if (
+            Array.isArray(style.facets.brand) &&
+            style.facets.brand.length > 0
+          ) {
+            hashtags.push(style.facets.brand[0]);
+          }
+          if (
+            Array.isArray(style.facets.category) &&
+            style.facets.category.length > 0
+          ) {
+            hashtags.push(style.facets.category[0]);
+          }
+
+          return {
+            rawKey,
+            rawData: style,
+            style_id: style.style_idx,
+            imageSrc: style.image.origin,
+            platform:
+              style.site_id === "iylQhcSbkgVxi0Ye"
+                ? "무신사"
+                : style.site_id === "vPu2SsvYkCYXDCiz"
+                ? "지그재그"
+                : style.site_id || "",
+            brandName: Array.isArray(style.facets.brand)
+              ? style.facets.brand[0]
+              : "",
+            productTitle: style.name,
+            discount: { rate: discountRate, label: discountLabel },
+            price: {
+              amount: salePrice || 0,
+              currency: style.price?.currency || "",
+              formatted:
+                salePrice != null ? `${salePrice.toLocaleString()}원` : "",
+            },
+            breadcrumbs,
+            hashtags,
+            review: style.metadata?.description || "",
+            fit: "",
+          };
+        });
+
+        setItems(mappedItems);
+      } catch (err) {
+        console.error("GET 에러:", err);
+      }
+    };
+    fetchFolder();
+  }, []);
+
+  // 2) 항목 삭제 시 호출: items에서 제거 + PUT 요청
+  const handleDelete = async (rawKeyToDelete) => {
+    // 2-1) state에서 삭제
+    const filtered = items.filter((item) => item.rawKey !== rawKeyToDelete);
+    setItems(filtered);
+
+    // 2-2) PUT 요청: filtered 배열을 rawKey/rawData 형태로 전송
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/api/baskets/${basketName}?token=${encodeURIComponent(
+        token
+      )}`;
+
+      const payloadObject = {};
+      filtered.forEach((item) => {
+        payloadObject[item.rawKey] = item.rawData;
+      });
+
+      const putResp = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadObject),
+      });
+      if (!putResp.ok) {
+        console.error("삭제 후 PUT 실패:", await putResp.text());
+      }
+    } catch (err) {
+      console.error("삭제 후 PUT 에러:", err);
+    }
+  };
+
+  // 드래그 화면 이탈 시
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  // 드래그 진입 시
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  // 드래그 화면 위 이동 시
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  // 드롭 시
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
   return (
-    <div className="p-5">
-      <MyFolderHeader folderName={folderName} />
+    <div
+      className="relative"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="p-5">
+        <MyFolderHeader folderName={folderName} />
+        <div className="mt-6 space-y-4">
+          {items.map((item, idx) => (
+            <MyFolderItem
+              key={idx}
+              itemInfo={item}
+              onDelete={() => handleDelete(item.rawKey)}
+            />
+          ))}
+        </div>
+      </div>
 
-      {items.map((item, idx) => (
-        <MyFolderItem key={idx} itemInfo={item} />
-      ))}
+      {isDragging && (
+        <UrlDropper
+          items={items}
+          setItems={setItems}
+          onFinished={() => setIsDragging(false)}
+        />
+      )}
     </div>
   );
-};
-
-export default MyFolder;
+}
