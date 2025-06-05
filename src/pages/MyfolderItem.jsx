@@ -1,10 +1,11 @@
 // MyFolderItem.jsx
 import { useEffect, useState } from "react";
 
-const MyFolderItem = ({ itemInfo, onDelete }) => {
+const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
   const [reviewSummary, setReviewSummary] = useState("");
+  const [fitAnalysis, setFitAnalysis] = useState("");
 
   const {
     imageSrc,
@@ -25,7 +26,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     if (itemInfo.fit) setFitOpen(true);
   }, [itemInfo.review, itemInfo.fit]);
 
-  // API 응답 데이터를 포매팅하는 함수
+  // --- (기존) 리뷰 요약 포매팅 함수 ---
   const formatReviewSummary = (data) => {
     if (!data || !data.overall_rating) return "";
 
@@ -66,6 +67,79 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
     return formatted;
   };
 
+  // --- (추가) 핏 확인 결과 포매팅 함수 ---
+  const formatFitAnalysis = (data) => {
+    if (!data) return "";
+
+    const {
+      body_type,
+      fit_type,
+      recommendation,
+      season,
+      size_feedback,
+      style_compatibility,
+      explanation,
+      score,
+    } = data;
+
+    let formatted = "";
+
+    // 🧍 체형 (body_type)
+    if (Array.isArray(body_type) && body_type.length > 0) {
+      formatted += `🧍 체형 정보\n`;
+      formatted += `${body_type.join(" / ")}\n\n`;
+    }
+
+    // 👕 핏 타입 (fit_type)
+    if (fit_type) {
+      formatted += `👕 핏 타입\n`;
+      formatted += `${fit_type}\n\n`;
+    }
+
+    // 👍 추천 여부 (recommendation)
+    if (recommendation) {
+      formatted += `👍 추천 여부\n`;
+      formatted += `${recommendation}\n\n`;
+    }
+
+    // 🌡 계절 (season)
+    if (Array.isArray(season) && season.length > 0) {
+      formatted += `🌡 계절 추천\n`;
+      formatted += `${season.join(" / ")}\n\n`;
+    }
+
+    // 🎯 사이즈 피드백 (size_feedback)
+    if (size_feedback) {
+      formatted += `🎯 사이즈 피드백\n`;
+      formatted += `${size_feedback}\n\n`;
+    }
+
+    // ⭐️ 스타일 호환도 (style_compatibility)
+    if (style_compatibility) {
+      formatted += `⭐️ 스타일 호환도\n`;
+      if (style_compatibility.score) {
+        formatted += `- 점수: ${style_compatibility.score}/5\n`;
+      }
+      if (style_compatibility.explanation) {
+        formatted += `- 설명: ${style_compatibility.explanation}\n\n`;
+      }
+    }
+
+    // ✏️ 추가 설명 (explanation, score 등이 top-level에 있는 경우)
+    // (이미 style_compatibility.explanation을 넣었지만,
+    // 별도 explanation 또는 score가 있을 때 추가로 표시)
+    if (explanation && !style_compatibility) {
+      formatted += `✏️ 추가 설명\n`;
+      formatted += `${explanation}\n\n`;
+    }
+    if (score && !style_compatibility) {
+      formatted += `📈 종합 점수\n`;
+      formatted += `${score}/5\n\n`;
+    }
+
+    return formatted.trim(); // 마지막 공백 제거
+  };
+
   const fetchReviewSummarize = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -79,7 +153,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token: token,
-          style_id: rawKey, // Use rawKey here
+          style_id: rawItems, // Use rawKey here
         }),
       });
 
@@ -95,6 +169,74 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
       setReviewSummary(formattedSummary);
     } catch (error) {
       console.error("Error fetching review summary:", error);
+    }
+  };
+
+  const fetchFitAnalysis = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return console.error("토큰이 없습니다.");
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL;
+      const url = `${baseUrl}/llm/fit-analysis`;
+
+      // itemInfo 및 rawItems에서 필요한 데이터 추출
+      const matchedEntry = rawItems.find((entry) => entry[0] === rawKey);
+      if (!matchedEntry) {
+        console.error(
+          `rawItems에서 rawKey=${rawKey}인 항목을 찾을 수 없습니다.`
+        );
+        return;
+      }
+      const styleData = matchedEntry[1];
+
+      const requestBody = {
+        token: token,
+        site_id: styleData.site_id || "",
+        style_data: {
+          ...styleData, // rawItems에서 추출한 객체 전체를 style_data로 전달
+          name: itemInfo.productTitle || styleData.name,
+          price: itemInfo.price || styleData.price,
+          image: { src: itemInfo.imageSrc || styleData.image.origin },
+          metadata: {
+            brandName: itemInfo.brandName || styleData.metadata.brandName,
+            discount: itemInfo.discount || styleData.price,
+            breadcrumbs: itemInfo.breadcrumbs || [],
+            hashtags: itemInfo.hashtags || [],
+          },
+          facets: itemInfo.facets || styleData.facets,
+          url: itemInfo.url || styleData.url,
+          success: true,
+        },
+      };
+
+      console.log("핏 분석 요청 본문:", requestBody);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        console.error(
+          "핏 분석 POST 실패:",
+          response.status,
+          response.statusText
+        );
+        const errorText = await response.text();
+        console.error("에러 응답:", errorText);
+        return;
+      }
+
+      const result = await response.json();
+      console.log("핏 분석 응답:", result);
+
+      // result.data를 포매팅해서 상태값에 저장
+      const formattedFit = formatFitAnalysis(result.data);
+      setFitAnalysis(formattedFit);
+    } catch (error) {
+      console.error("Error fetching fit analysis:", error);
     }
   };
 
@@ -141,7 +283,10 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               리뷰 요약
             </button>
             <button
-              onClick={() => setFitOpen(true)}
+              onClick={() => {
+                setFitOpen(true);
+                fetchFitAnalysis(); // 핏 분석 API 호출 추가
+              }}
               className="px-3 py-1 border border-black bg-black text-white text-sm cursor-pointer duration-150 hover:bg-white hover:text-black"
             >
               핏 확인하기
@@ -212,7 +357,11 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
               />
             </svg>
           </div>
-          {fitOpen && <p className="p-3 border text-sm">{fit}</p>}
+          {fitOpen && (
+            <div className="p-3 border text-sm whitespace-pre-line">
+              {fitAnalysis || fit}
+            </div>
+          )}
           {fitOpen && (
             <div className="flex gap-2 mt-2">
               <button className="px-3 py-1 border border-black text-sm cursor-pointer hover:bg-black hover:text-white">
