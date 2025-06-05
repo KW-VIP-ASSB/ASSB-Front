@@ -181,7 +181,7 @@ const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
       const url = `${baseUrl}/llm/fit-analysis`;
 
       // itemInfo 및 rawItems에서 필요한 데이터 추출
-      const matchedEntry = rawItems.find((entry) => entry[0] === rawKey);
+      const matchedEntry = rawItems.find((entry) => entry[0] == rawKey);
       if (!matchedEntry) {
         console.error(
           `rawItems에서 rawKey=${rawKey}인 항목을 찾을 수 없습니다.`
