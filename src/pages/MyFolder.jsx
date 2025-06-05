@@ -8,6 +8,7 @@ import UrlDropper from "../components/UrlDropper";
 export default function MyFolder() {
   const [folderName, setFolderName] = useState("로딩 중...");
   const [items, setItems] = useState([]);
+  const [rawItems, setRawItems] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
   const location = useLocation();
@@ -16,13 +17,13 @@ export default function MyFolder() {
   //   console.log(isDragging);
   // }, [isDragging]);
 
-  useEffect(() => {
-    console.log("🔄 items 배열 변경됨:", items.length, "개");
-    console.log(
-      "현재 rawKey 목록:",
-      items.map((item) => item.rawKey)
-    );
-  }, [items]);
+  // useEffect(() => {
+  //   console.log("🔄 items 배열 변경됨:", items.length, "개");
+  //   console.log(
+  //     "현재 rawKey 목록:",
+  //     items.map((item) => item.rawKey)
+  //   );
+  // }, [items]);
 
   // 1) 컴포넌트 마운트 시 GET 요청으로 기존 장바구니 불러오기 (한 번만)
   useEffect(() => {
@@ -54,6 +55,9 @@ export default function MyFolder() {
         setFolderName(json.data.name || "이름 없음");
         const styleInfos = json.data.style_infos || {};
         const entries = Object.entries(styleInfos); // [ [rawKey, styleObj], ... ]
+
+        setRawItems(entries);
+        console.log(rawItems);
 
         const mappedItems = entries.map(([rawKey, style]) => {
           const originalPrice = style.price?.original_price;
@@ -211,6 +215,7 @@ export default function MyFolder() {
               key={idx}
               itemInfo={item}
               onDelete={() => handleDelete(item.rawKey)}
+              rawItems={rawItems}
             />
           ))}
         </div>

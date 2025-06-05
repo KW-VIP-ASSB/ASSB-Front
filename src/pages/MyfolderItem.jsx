@@ -1,7 +1,7 @@
 // MyFolderItem.jsx
 import { useEffect, useState } from "react";
 
-const MyFolderItem = ({ itemInfo, onDelete }) => {
+const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [fitOpen, setFitOpen] = useState(false);
   const [reviewSummary, setReviewSummary] = useState("");
@@ -80,7 +80,7 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token: token,
-          style_id: rawKey, // Use rawKey here
+          style_id: rawItems, // Use rawKey here
         }),
       });
 
@@ -107,27 +107,32 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
       const baseUrl = import.meta.env.VITE_BACKEND_URL;
       const url = `${baseUrl}/llm/fit-analysis`;
 
-      // itemInfo에서 필요한 데이터 추출
+      // itemInfo 및 rawItems에서 필요한 데이터 추출
+      const matchedEntry = rawItems.find((entry) => entry[0] === rawKey);
+      if (!matchedEntry) {
+        console.error(
+          `rawItems에서 rawKey=${rawKey}인 항목을 찾을 수 없습니다.`
+        );
+        return;
+      }
+      const styleData = matchedEntry[1];
+
       const requestBody = {
         token: token,
-        site_id: itemInfo.platform || "", // platform을 site_id로 사용
+        site_id: styleData.site_id || "",
         style_data: {
-          style_idx: rawKey?.toString() || "",
-          site_id: itemInfo.platform || "",
-          name: itemInfo.productTitle || "",
-          url: itemInfo.url || "", // itemInfo에 url이 있다면 사용
-          data: itemInfo.rawData || {}, // rawData가 있다면 사용
-          price: itemInfo.price || {},
-          image: {
-            src: itemInfo.imageSrc || "",
-          },
+          ...styleData, // rawItems에서 추출한 객체 전체를 style_data로 전달
+          name: itemInfo.productTitle || styleData.name,
+          price: itemInfo.price || styleData.price,
+          image: { src: itemInfo.imageSrc || styleData.image.origin },
           metadata: {
-            brandName: itemInfo.brandName,
-            discount: itemInfo.discount,
-            breadcrumbs: itemInfo.breadcrumbs,
-            hashtags: itemInfo.hashtags,
+            brandName: itemInfo.brandName || styleData.metadata.brandName,
+            discount: itemInfo.discount || styleData.price,
+            breadcrumbs: itemInfo.breadcrumbs || [],
+            hashtags: itemInfo.hashtags || [],
           },
-          facets: itemInfo.facets || {},
+          facets: itemInfo.facets || styleData.facets,
+          url: itemInfo.url || styleData.url,
           success: true,
         },
       };
@@ -153,8 +158,6 @@ const MyFolderItem = ({ itemInfo, onDelete }) => {
 
       const result = await response.json();
       console.log("핏 분석 응답:", result);
-
-      // 핏 분석 결과를 상태에 저장
       setFitAnalysis(result.data || result);
     } catch (error) {
       console.error("Error fetching fit analysis:", error);
