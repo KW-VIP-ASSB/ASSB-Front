@@ -26,7 +26,7 @@ const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
     if (itemInfo.fit) setFitOpen(true);
   }, [itemInfo.review, itemInfo.fit]);
 
-  // API 응답 데이터를 포매팅하는 함수
+  // --- (기존) 리뷰 요약 포매팅 함수 ---
   const formatReviewSummary = (data) => {
     if (!data || !data.overall_rating) return "";
 
@@ -65,6 +65,79 @@ const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
     }
 
     return formatted;
+  };
+
+  // --- (추가) 핏 확인 결과 포매팅 함수 ---
+  const formatFitAnalysis = (data) => {
+    if (!data) return "";
+
+    const {
+      body_type,
+      fit_type,
+      recommendation,
+      season,
+      size_feedback,
+      style_compatibility,
+      explanation,
+      score,
+    } = data;
+
+    let formatted = "";
+
+    // 🧍 체형 (body_type)
+    if (Array.isArray(body_type) && body_type.length > 0) {
+      formatted += `🧍 체형 정보\n`;
+      formatted += `${body_type.join(" / ")}\n\n`;
+    }
+
+    // 👕 핏 타입 (fit_type)
+    if (fit_type) {
+      formatted += `👕 핏 타입\n`;
+      formatted += `${fit_type}\n\n`;
+    }
+
+    // 👍 추천 여부 (recommendation)
+    if (recommendation) {
+      formatted += `👍 추천 여부\n`;
+      formatted += `${recommendation}\n\n`;
+    }
+
+    // 🌡 계절 (season)
+    if (Array.isArray(season) && season.length > 0) {
+      formatted += `🌡 계절 추천\n`;
+      formatted += `${season.join(" / ")}\n\n`;
+    }
+
+    // 🎯 사이즈 피드백 (size_feedback)
+    if (size_feedback) {
+      formatted += `🎯 사이즈 피드백\n`;
+      formatted += `${size_feedback}\n\n`;
+    }
+
+    // ⭐️ 스타일 호환도 (style_compatibility)
+    if (style_compatibility) {
+      formatted += `⭐️ 스타일 호환도\n`;
+      if (style_compatibility.score) {
+        formatted += `- 점수: ${style_compatibility.score}/5\n`;
+      }
+      if (style_compatibility.explanation) {
+        formatted += `- 설명: ${style_compatibility.explanation}\n\n`;
+      }
+    }
+
+    // ✏️ 추가 설명 (explanation, score 등이 top-level에 있는 경우)
+    // (이미 style_compatibility.explanation을 넣었지만,
+    // 별도 explanation 또는 score가 있을 때 추가로 표시)
+    if (explanation && !style_compatibility) {
+      formatted += `✏️ 추가 설명\n`;
+      formatted += `${explanation}\n\n`;
+    }
+    if (score && !style_compatibility) {
+      formatted += `📈 종합 점수\n`;
+      formatted += `${score}/5\n\n`;
+    }
+
+    return formatted.trim(); // 마지막 공백 제거
   };
 
   const fetchReviewSummarize = async () => {
@@ -158,7 +231,10 @@ const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
 
       const result = await response.json();
       console.log("핏 분석 응답:", result);
-      setFitAnalysis(result.data || result);
+
+      // result.data를 포매팅해서 상태값에 저장
+      const formattedFit = formatFitAnalysis(result.data);
+      setFitAnalysis(formattedFit);
     } catch (error) {
       console.error("Error fetching fit analysis:", error);
     }
