@@ -153,7 +153,7 @@ const MyFolderItem = ({ itemInfo, onDelete, rawItems }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token: token,
-          style_id: rawItems, // Use rawKey here
+          style_id: rawKey, // Use rawKey here
         }),
       });
 
